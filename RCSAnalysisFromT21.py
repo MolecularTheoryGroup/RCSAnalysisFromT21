@@ -93,8 +93,8 @@ DenHess
 eor''')
 	
 	DensfScript = DensfScript.getvalue()
-# 	
-# 	print DensfScript
+#	
+#	print DensfScript
 	
 	subprocess.Popen(DensfScript, shell=True, stdout=subprocess.PIPE).stdout.read()
 	try:
@@ -121,9 +121,9 @@ def GetDataFromT41(T41FileName):
 	return T41Data
 
 # HessInd = [
-# 	['XX','XY','XZ'],
-# 	['XY','YY','YZ'],
-# 	['XZ','YZ','ZZ']]
+#	['XX','XY','XZ'],
+#	['XY','YY','YZ'],
+#	['XZ','YZ','ZZ']]
 HessInd = [
 	['XX','XY','XZ'],
 	['XY','YY','YZ'],
@@ -149,38 +149,47 @@ def GetEigenSystemForT41(T41Data):
 	T41Data['EigVecs'] = [None]*NumPts
 	for i in range(NumPts):
 		T41Data['EigVals'][i], T41Data['EigVecs'][i] = la.eigh(GetHessForT41Index(T41Data, i))
-# 		T41Data['EigVecs'][i] = np.transpose(T41Data['EigVecs'][i])
+#		T41Data['EigVecs'][i] = np.transpose(T41Data['EigVecs'][i])
 	return
 
 
 def tex_escape(text):	
 	"""
-	    :param text: a plain text message
-	    :return: the message escaped to appear correctly in LaTeX
+		:param text: a plain text message
+		:return: the message escaped to appear correctly in LaTeX
 	"""
 	import re
 	conv = {
-	    '&': r'\&',
-	    '%': r'\%',
-	    '$': r'\$',
-	    '#': r'\#',
-	    '_': r'\_',
-	    '{': r'\{',
-	    '}': r'\}',
-	    '~': r'\textasciitilde{}',
-	    '^': r'\^{}',
-	    '\\': r'\textbackslash{}',
-	    '<': r'\textless',
-	    '>': r'\textgreater',
+		'&': r'\&',
+		'%': r'\%',
+		'$': r'\$',
+		'#': r'\#',
+		'_': r'\_',
+		'{': r'\{',
+		'}': r'\}',
+		'~': r'\textasciitilde{}',
+		'^': r'\^{}',
+		'\\': r'\textbackslash{}',
+		'<': r'\textless',
+		'>': r'\textgreater',
 	}
 	regex = re.compile('|'.join(re.escape(unicode(key)) for key in sorted(conv.keys(), key = lambda item: - len(item))))
 	return regex.sub(lambda match: conv[match.group()], text)
 
-
-def RCSMake1DPlot(T41Data, Tol, OutFileName, Res):
+# def forceAspect(ax,aspect=1):
+# 	import matplotlib.pyplot as plt
+# 	im = ax.get_images()
+# 	extent =  im[0].get_extent()
+# 	ax.set_aspect(abs((extent[1]-extent[0])/(extent[3]-extent[2]))/aspect)
+	
+def RCSMake1DPlot(T41Data, Tol, OutFileName, Res, ImgPath = ''):
 	import matplotlib.pyplot as plt
-# 	import pylab as plt
-# 	from matplotlib import rc
+	from matplotlib import gridspec
+	import numpy as np
+	import Image
+	import os
+#	import pylab as plt
+#	from matplotlib import rc
 	
 	ValList = [[[0],[0]],[[0],[0]]]
 	NumPts = len(T41Data['Density'])
@@ -193,7 +202,7 @@ def RCSMake1DPlot(T41Data, Tol, OutFileName, Res):
 	OutCSVName = CurrentDir + SubDir + "/" + OutFileName.replace(' ','_')
 	OutCSVName = OutCSVName.rpartition('_(')[0]
 	OutCSV = open(OutCSVName + '.csv','w')
-	Headings = ["PtNum","X","Y","Z","Rho","Lap"]
+	Headings = ["PtNum","X","Y","Z","XBohr","YBohr","ZBohr","Rho","Lap"]
 	for i in ['1','2','3']:
 		Headings.append('DotPdt_' + i)
 	for i in ['1','2','3']:
@@ -221,7 +230,7 @@ def RCSMake1DPlot(T41Data, Tol, OutFileName, Res):
 	for i in range(NumPts):
 		G = [T41Data['DensityGrad' + j][i] for j in GradInd]
 		E = [T41Data['EigVals'][i][j] for j in range(3)]
-# 		EV = np.transpose([T41Data['EigVecs'][i][j] for j in range(3)])
+#		EV = np.transpose([T41Data['EigVecs'][i][j] for j in range(3)])
 		EV = np.transpose(T41Data['EigVecs'][i])
 		DP = [np.absolute(np.dot(G,j)) for j in EV]
 		
@@ -229,6 +238,9 @@ def RCSMake1DPlot(T41Data, Tol, OutFileName, Res):
 		
 		OutCSV.write(str(i+1) + ',')
 		for j in [T41Data['Coords'][i]]:
+			for k in j:
+				OutCSV.write(str(k) + ',')
+		for j in [T41Data['CoordsBohr'][i]]:
 			for k in j:
 				OutCSV.write(str(k) + ',')
 		OutCSV.write(str(T41Data['Density'][i]) + ',')
@@ -244,8 +256,8 @@ def RCSMake1DPlot(T41Data, Tol, OutFileName, Res):
 		for j in [T41Data['DensityHess' + k][i] for k in ['XX','XY','XZ','YY','YZ','ZZ']]:
 			OutCSV.write(str(j) + ',')
 		OutCSV.write('\n')	
-# 		HasVal = False
-# 		SameSign = 0
+#		HasVal = False
+#		SameSign = 0
 		
 		for iRCS in RCS:
 			HasVal = True
@@ -266,44 +278,44 @@ def RCSMake1DPlot(T41Data, Tol, OutFileName, Res):
 				
 				
 		
-# 		# CP (not used)
-# 		if DP[0] <= Tol and DP[1] <= Tol and DP[2] <= Tol:
-# 			Val = 6
-# 			HasVal = True
-# 			
-# 		# Ridge and r-connector
-# 		elif DP[0] <= Tol and DP[1] <= Tol and DP[2] > Tol:
-# 			HasVal = True
-# 			if E[0] < 0:
-# 				if E[1] < 0: Val = 1
-# 				else:
-# 					SameSign = 1
-# 					Val = 2
-# 			else:
-# 				Val = 2
-# 				if E[1] < 0: SameSign = 1
-# 					
-# 		# Valley and v-connector
-# 		elif DP[1] <= Tol and DP[2] <= Tol and DP[0] > Tol:
-# 			HasVal = True
-# 			if E[1] > 0:
-# 				if E[2] > 0: Val = 5
-# 				else:
-# 					SameSign = 1
-# 					Val = 4
-# 			else:
-# 				Val = 4
-# 				if E[2] > 0: SameSign = 1
-# 					
-# 		# m-connector
-# 		elif DP[0] <= Tol and DP[2] <= Tol and DP[1] > Tol:
-# 			HasVal = True
-# 			Val = 3
-# 			if np.sign(E[2]) != np.sign(E[0]): SameSign = 1 
-# 			
-# 		if HasVal:
-# 			ValList[SameSign][0].append(PtNum)
-# 			ValList[SameSign][1].append(Val)
+#		# CP (not used)
+#		if DP[0] <= Tol and DP[1] <= Tol and DP[2] <= Tol:
+#			Val = 6
+#			HasVal = True
+#			
+#		# Ridge and r-connector
+#		elif DP[0] <= Tol and DP[1] <= Tol and DP[2] > Tol:
+#			HasVal = True
+#			if E[0] < 0:
+#				if E[1] < 0: Val = 1
+#				else:
+#					SameSign = 1
+#					Val = 2
+#			else:
+#				Val = 2
+#				if E[1] < 0: SameSign = 1
+#					
+#		# Valley and v-connector
+#		elif DP[1] <= Tol and DP[2] <= Tol and DP[0] > Tol:
+#			HasVal = True
+#			if E[1] > 0:
+#				if E[2] > 0: Val = 5
+#				else:
+#					SameSign = 1
+#					Val = 4
+#			else:
+#				Val = 4
+#				if E[2] > 0: SameSign = 1
+#					
+#		# m-connector
+#		elif DP[0] <= Tol and DP[2] <= Tol and DP[1] > Tol:
+#			HasVal = True
+#			Val = 3
+#			if np.sign(E[2]) != np.sign(E[0]): SameSign = 1 
+#			
+#		if HasVal:
+#			ValList[SameSign][0].append(PtNum)
+#			ValList[SameSign][1].append(Val)
 	
 	OutCSV.close()
 				
@@ -318,34 +330,75 @@ def RCSMake1DPlot(T41Data, Tol, OutFileName, Res):
 	xVals = range(0,125,25)
 	yVals = range(1,7)
 	
-	fig = plt.figure()
-	ax = fig.add_subplot(111) # subplot required to change the aspect ratio
-	ax.set_aspect(10)
+	fig = plt.figure(figsize=(8,3))
+	if os.path.isfile(ImgPath):
+		gs = gridspec.GridSpec(1,2,width_ratios=[5.25,2.75])
+		ax = fig.add_subplot(gs[0]) # subplot required to change the aspect ratio
+	else:
+		ax = fig.add_subplot(111)
+# 	ax.set_aspect(10)
+# 	ax = fig.add_axes([0,0,6*Res,3*Res])
 	ax.plot(ValList[0][0], ValList[0][1], 'bs', ValList[1][0], ValList[1][1], 'r+')
 	
 	plt.rc('text', usetex=True)
-	plt.rc('font', family='serif')
-	plt.rc('font', size=16)
-	yLabels = ['Ridge',r'$R$-connector',r'$M$-connector',r'$V$-connector','Valley','Critical point']
+	plt.rc('font', family='sans-serif')
+	plt.rc('font', size=12)
+	yLabels = ['Ridge',r'\textit{R}-connector',r'\textit{M}-connector',r'\textit{V}-connector','Valley','Critical point']
 	
 	plt.xticks(xVals, xVals)
 	plt.yticks(yVals,yLabels,rotation=0)
 	plt.axis([-2,103,0.5,5.5])
 	plt.xlabel('\% of path langth')
 	
+	fig.set_size_inches(8,3)
+	
+	if os.path.isfile(ImgPath):
+		im = Image.open(ImgPath)
+	# 	height = im.size[1]
+	# 	im = np.array(im).astype(np.float) / 255
+		c = im.getbbox()
+		a = 5
+		cr = (c[0]+a,c[1]+a,c[2]-a,c[3]-a)
+		im = im.crop(cr).rotate(180)
+		w = 2.5 * Res
+		wp = w / float(im.size[0])
+		h = int(float(im.size[1]) * wp)
+		w = int(w)
+		im = im.resize([w,h],Image.BICUBIC)
+		fig.figimage(im, xo=5.5*Res, yo=0.5*Res + (w-h)/2, origin='lower')
+	
 	fig.tight_layout()
 	
 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '.png', dpi=Res)
-	plt.axis([-2,103,0.5,6.5])
-	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wCP.png', dpi=Res)
+# 	plt.axis([-2,103,0.5,6.5])
+# 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wCP.png', dpi=Res)
+# 
+# 	plt.title(tex_escape(OutFileName.replace('_',' ')))
+# 	plt.axis([-2,103,0.5,5.5])
+# 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wTitle.png', dpi=Res)
+# 	plt.axis([-2,103,0.5,6.5])
+# 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wTitle_wCP.png', dpi=Res)
 	
-	plt.title(tex_escape(OutFileName.replace('_',' ')))
-	plt.axis([-2,103,0.5,5.5])
-	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wTitle.png', dpi=Res)
-	plt.axis([-2,103,0.5,6.5])
-	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wTitle_wCP.png', dpi=Res)
+# 	ax.set_aspect(10)
+# 	f=plt.gcf()
 	
 # 	plt.show()
+	
+# 	fig.set_size_inches(7,4)
+# 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '.eps', dpi=Res)
+# 	plt.axis([-2,103,0.5,6.5])
+# 	fig.set_size_inches(7.5,4.5)
+# 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wCP.eps', dpi=Res)
+# 	
+# 	plt.title(tex_escape(OutFileName.replace('_',' ')))
+# 	plt.axis([-2,103,0.5,5.5])
+# 	fig.set_size_inches(7,4)
+# 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wTitle.eps', dpi=Res)
+# 	plt.axis([-2,103,0.5,6.5])
+# 	fig.set_size_inches(7.5,4.5)
+# 	fig.savefig(CurrentDir + SubDir + "/" + OutFileName.replace(' ','_') + '_wTitle_wCP.eps', dpi=Res)
+	
+#	plt.show()
 	
 	plt.close()
 					
@@ -377,14 +430,14 @@ def main():
 	import subprocess
 	global T21BaseName, ScriptDir, CurrentDir
 	
-	Res = 300 # dpi of resulting plots
+	Res = 1200 # dpi of resulting plots
 	
-	NumPts = 301
+	NumPts = 101
 	Tols = [10**(-e) for e in range(3,9)]
-# 	InputFilePath = "/Users/Haiiro/Safe/tmp/input.txt"
-# 	InputFilePath = "/Users/Haiiro/ADFdata/1RidgePaper/first_round_data/input.txt"
-# 	InputFilePath = "/Users/Haiiro/ADFdata/1RidgePaper/first_round_data/input_copy.txt"
-	InputFilePath = "/Volumes/Kuroi1_Misc/workspace/1RidgePaper/first_round_data/input.txt"
+#	InputFilePath = "/Users/Haiiro/Safe/tmp/input.txt"
+#	InputFilePath = "/Users/Haiiro/ADFdata/1RidgePaper/first_round_data/input.txt"
+#	InputFilePath = "/Users/Haiiro/ADFdata/1RidgePaper/first_round_data/input_copy.txt"
+	InputFilePath = "/Users/Haiiro/ADFdata/bondalyzer_math_paper/DiSubstitutedBenzene/LDAautojobs/input.txt"
 	
 	if len(sys.argv) > 1:
 		InputFilePath = sys.argv[1]
@@ -415,6 +468,15 @@ def main():
 		if len(aLine) > 0:
 			InputT21FileName = aLine[0]
 			TargetCPs = ast.literal_eval(aLine[1])
+			
+			ImgPaths = []
+			
+			if len(aLine) > 3:
+				ImgPaths = aLine[3]
+				ImgPaths = eval(ImgPaths)
+# 				ImgPaths = ast.literal_eval(ImgPaths)
+			if len(ImgPaths) < len(TargetCPs):
+				ImgPaths = [''] * len(TargetCPs)
 			
 			print "File: %s with CPs: %s" % (InputT21FileName, str(TargetCPs))
 			
@@ -448,7 +510,7 @@ def main():
 					if '.' in T21BaseName:
 						T21BaseName = T21BaseName.rpartition('.')[0]
 						
-# 					T21FileName = "'" + T21FileName + "'"
+#					T21FileName = "'" + T21FileName + "'"
 				
 					CPCoords = GetCPCoords(T21FileName)
 					CPTypes = GetCPTypes(T21FileName)
@@ -459,7 +521,8 @@ def main():
 					OutFileNames = []
 					
 					if len(aLine) > 2:
-						OutFileNames = ast.literal_eval(aLine[2])
+						OutFileNames = aLine[2]
+						OutFileNames = ast.literal_eval(OutFileNames)
 						if len(OutFileNames) != len(TargetCPs):
 							OutFileNames = []
 							break
@@ -467,27 +530,30 @@ def main():
 						OutFileNames = []
 						for i in Tmp:
 							TmpStr = T21BaseName + '_' + i + '_'
-# 							First = True
-# 							for i in c:
-# 								if First: First = False
-# 								else: TmpStr += '-'
-# 								TmpStr += CPTypeInd[CPTypes[i-1]-1] + str(i)
+#							First = True
+#							for i in c:
+#								if First: First = False
+#								else: TmpStr += '-'
+#								TmpStr += CPTypeInd[CPTypes[i-1]-1] + str(i)
 							OutFileNames.append(TmpStr)
 					
 					if len(OutFileNames) == 0:
 						for c in TargetCPs:
 							TmpStr = T21BaseName + '_'
-# 							First = True
-# 							for i in c:
-# 								if First: First = False
-# 								else: TmpStr += '-'
-# 								TmpStr += CPTypeInd[CPTypes[i-1]-1] + str(i)
+#							First = True
+#							for i in c:
+#								if First: First = False
+#								else: TmpStr += '-'
+#								TmpStr += CPTypeInd[CPTypes[i-1]-1] + str(i)
 							OutFileNames.append(TmpStr)
 					
 					global PathCoords
 					
-					for Pts, PathName in zip(TargetCPs, OutFileNames):
+					for Pts, PathName, ImgPath in zip(TargetCPs, OutFileNames, ImgPaths):
 						CPNums = GetCPsFromCoords(Pts, CPCoords, CPTypes, OrigCPCoords, OrigCPTypes)
+						
+						if not os.path.exists(ImgPath):
+							ImgPath = CurrentDir + '/' + ImgPath
 						
 						print "CP pair %s (%s)" % (str(CPNums), Pts)
 						
@@ -505,10 +571,11 @@ def main():
 						T41FileName = DensfForCoords(T21FileName, PathCoords)
 						T41Data = GetDataFromT41(T41FileName)
 						T41Data['Coords'] = PathCoords
+						T41Data['CoordsBohr'] = GenerateCoords(CPCoords[CPNums[0]-1], CPCoords[CPNums[1]-1], NumPts)
 						GetEigenSystemForT41(T41Data)
 						for Tol in Tols:
-							RCSMake1DPlot(T41Data, Tol, OutFileName + '_(' + '%.0e' % Tol + ')', Res)
-				# 		break
+							RCSMake1DPlot(T41Data, Tol, OutFileName + '_(' + '%.0e' % Tol + ')', Res, ImgPath)
+				#		break
 				else:
 					print "File not found: %s" % T21FileName
 		
